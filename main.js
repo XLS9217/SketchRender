@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import GUI from 'lil-gui'
 import Stats from 'stats.js'
-import { EffectComposer, GLTFLoader, OrbitControls, RenderPass, ShaderPass, GammaCorrectionShader, SMAAPass } from 'three/examples/jsm/Addons.js';
+import { EffectComposer, GLTFLoader, OrbitControls, RenderPass, ShaderPass, GammaCorrectionShader, SMAAPass, FXAAShader } from 'three/examples/jsm/Addons.js';
 
 import { NormalExpansion, ScaleExpansion } from './src/NormalExpension.js'
 import { flexableRender, removeAllMesh } from './util/UtilFunctions.js'
@@ -19,6 +19,7 @@ const modelLinks = {
 	TEST_2 : './static/Models/LineTest2.glb',
 	TEST_3 : './static/Models/LineTest3.glb',
 	FUDAN_1 : './static/Models/FuDanShow_Fix2.glb',
+	BYTE_1 : './static/Models/ByteDance.glb',
 }
 const RenderTypes = {
 
@@ -78,11 +79,14 @@ composer.addPass(renderPass);
 // const geometryContourShaderPass = GeometryContourEffect(renderer, scene, camera)
 // composer.addPass(geometryContourShaderPass)
 
+const smaaPass = new SMAAPass(sizes.width, sizes.height)
+composer.addPass(smaaPass)
+
 const geometryContourPass = new GeometryContourPass(renderer, scene, camera)
 composer.addPass(geometryContourPass)
 
-// const smaaPass = new SMAAPass(sizes.width, sizes.height)
-// composer.addPass(smaaPass)
+// const fxaaPass = new ShaderPass(FXAAShader)
+// composer.addPass(fxaaPass)
 
 const gammaCorrectionPass = new ShaderPass(GammaCorrectionShader)
 composer.addPass(gammaCorrectionPass)
@@ -133,7 +137,7 @@ window.addEventListener('resize', () =>
 	camera.updateProjectionMatrix()
 
     renderer.setSize(sizes.width, sizes.height)
-    renderer.setPixelRatio(sizes.pixelRatio)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 })
 
