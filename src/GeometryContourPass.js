@@ -62,7 +62,7 @@ export default class GeometryContourPass extends Pass {
         this.normalThrsholdUniform = new THREE.Uniform(0.05);
         this.depthThrsholdUniform = new THREE.Uniform(0.05);
         this.accuracyUniform = new THREE.Uniform(8);
-        this.neighbourDistUniform = new THREE.Uniform(1.2);
+        this.neighbourDistUniform = new THREE.Uniform(1.0);
         this.applyToModelUniform = new THREE.Uniform(false)
         this.applyWireframeLimit = new THREE.Uniform(false)
         
@@ -254,11 +254,18 @@ export default class GeometryContourPass extends Pass {
 
     updateGeometryContourBuffer() {
 
-        let normalRenderBuffer = this.normalRender(this.renderer, this.scene, this.camera);
-        this.normalBufferUniform.value = normalRenderBuffer.texture;
+        let renderSize = new THREE.Vector2()
+        this.renderer.getSize(renderSize)
+        const pixelRatio = this.renderer.getPixelRatio() * 2;
 
-        let depthRenderBuffer = this.depthRender(this.renderer, this.scene, this.camera);
-        this.depthBufferUniform.value = depthRenderBuffer.texture;
+        normalRenderTarget.setSize(renderSize.x * pixelRatio, renderSize.y * pixelRatio);
+        this.normalRender(this.renderer, this.scene, this.camera);
+        this.normalBufferUniform.value = normalRenderTarget.texture;
+
+        depthRenderTarget.setSize(renderSize.x * pixelRatio, renderSize.y * pixelRatio);
+        this.depthRender(this.renderer, this.scene, this.camera);
+        this.depthBufferUniform.value = depthRenderTarget.texture;
+        
 
         if(this.applyWireframeLimit.value){
             let wireframeRenderBuffer = this.wireframeRender(this.renderer, this.scene, this.camera);

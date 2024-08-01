@@ -4,9 +4,10 @@ import Stats from 'stats.js'
 import { EffectComposer, GLTFLoader, OrbitControls, RenderPass, ShaderPass, GammaCorrectionShader, SMAAPass, FXAAShader } from 'three/examples/jsm/Addons.js';
 
 import { NormalExpansion, ScaleExpansion } from './src/NormalExpension.js'
-import { flexableRender, removeAllMesh } from './util/UtilFunctions.js'
+import { flexableRender, loadVideoToScreen, removeAllMesh } from './util/UtilFunctions.js'
 // import { GeometryContourEffect, updateGeometryContourBuffer } from './src/GeometryContour.js';
 import GeometryContourPass from './src/GeometryContourPass.js'
+import GeometryLinePass from './src/GeometryLinePass.js';
 
 
 const stats = new Stats();
@@ -20,6 +21,7 @@ const modelLinks = {
 	TEST_3 : './static/Models/LineTest3.glb',
 	FUDAN_1 : './static/Models/FuDanShow_Fix2.glb',
 	BYTE_1 : './static/Models/ByteDance.glb',
+	CEIBS_1 : './static/Models/ceibs.glb',
 }
 const RenderTypes = {
 
@@ -38,10 +40,11 @@ window.debug_param = {
 
 
 //info 
+const MIN_PIXEL_RATIO = 2
 const sizes = {
 	width: window.innerWidth,
 	height: window.innerHeight,
-	pixelRatio: Math.min(window.devicePixelRatio, 2)
+	pixelRatio: Math.min(window.devicePixelRatio, MIN_PIXEL_RATIO)
 }
 
 const canvas = document.querySelector('canvas.webgl')
@@ -79,11 +82,14 @@ composer.addPass(renderPass);
 // const geometryContourShaderPass = GeometryContourEffect(renderer, scene, camera)
 // composer.addPass(geometryContourShaderPass)
 
-const smaaPass = new SMAAPass(sizes.width, sizes.height)
-composer.addPass(smaaPass)
+// const smaaPass = new SMAAPass(sizes.width, sizes.height)
+// composer.addPass(smaaPass)
 
 const geometryContourPass = new GeometryContourPass(renderer, scene, camera)
 composer.addPass(geometryContourPass)
+
+// const geometryLinePass = new GeometryLinePass(renderer, scene, camera)
+// composer.addPass(geometryLinePass)
 
 // const fxaaPass = new ShaderPass(FXAAShader)
 // composer.addPass(fxaaPass)
@@ -96,8 +102,20 @@ composer.addPass(gammaCorrectionPass)
 let ambientLight = new THREE.AmbientLight(0xffffff, 1)
 scene.add(ambientLight)
 
+let directionalLight = new THREE.DirectionalLight(0xffffff, 1.0)
+directionalLight.position.set(0.0, 10.0, 10.0)
+scene.add(directionalLight)
+
 //model
 let gltfLoader = new GLTFLoader()
+
+let flvPlayer = flvjs.createPlayer({
+    type: 'flv',
+    url: 'http://172.16.40.58:8080/live/test2.flv'
+});
+
+let vidSrc = './static/videos/屏幕录制 2024-08-01 131047.mp4'
+let flvUrl = 'http://172.16.40.58:8080/live/test2.flv'
 
 function loadAndApplyFilter( modelSrc ){
 	gltfLoader.load(
@@ -107,11 +125,25 @@ function loadAndApplyFilter( modelSrc ){
 			scene.add(gltf.scene)
 	 
 			geometryContourPass.updateContourScene()
+			//geometryLinePass.updateLineScene()
 			//ScaleExpansion(gltf.scene, scene)
 			//NormalExpansion(gltf.scene, scene)
+
+			//add screen for ceibs
+			// if(modelSrc == modelLinks.CEIBS_1){
+			// 	scene.traverse((child) => {
+			// 		if(child.isMesh && child.name.includes('Screen')){
+			// 			child.scale.z *= -1.0
+			// 			if(child.name.includes('2')) loadVideoToScreen(child, vidSrc , false)
+			// 			else loadVideoToScreen(child, vidSrc , true)
+			// 		}
+			// 	})
+				
+			// }
 		}
 	)
 }
+
 
 loadAndApplyFilter(modelLinks.TEST_1)
 
@@ -131,13 +163,13 @@ window.addEventListener('resize', () =>
 {
 	sizes.width = window.innerWidth
 	sizes.height = window.innerHeight
-	sizes.pixelRatio = Math.min(window.devicePixelRatio , 2)
+	sizes.pixelRatio = Math.min(window.devicePixelRatio , MIN_PIXEL_RATIO)
 
 	camera.aspect = sizes.width / sizes.height
 	camera.updateProjectionMatrix()
 
     renderer.setSize(sizes.width, sizes.height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setPixelRatio(sizes.pixelRatio)
 
 })
 

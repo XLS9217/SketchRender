@@ -102,3 +102,49 @@ export function flexableRender(composer, renderer) {
         renderer.render(tempScene, tempCamera);
     }
 }
+
+
+//3d video function block str=============================================================
+
+let videoMaterial
+export function loadVideoToScreen(screenModel, videoSrc, flvPlayer = false) {
+    // Create an HTML video element
+    const video = document.createElement('video');
+    video.loop = true;    // Set to loop the video
+    video.muted = true;   // Mute the video
+    video.playsInline = true; // Necessary for mobile devices
+    video.style.display = 'none'; // Hide the video element
+    document.body.appendChild(video);
+
+    // Create a VideoTexture from the video element
+    const videoTexture = new THREE.VideoTexture(video);
+    videoTexture.minFilter = THREE.LinearFilter;
+    videoTexture.magFilter = THREE.LinearFilter;
+    videoTexture.format = THREE.RGBFormat;
+
+    // Create a material using the video texture
+    videoMaterial = new THREE.MeshBasicMaterial({ map: videoTexture });
+
+    // Apply the material to the screen model
+    screenModel.material = videoMaterial;
+
+    // Attach flvPlayer if it is provided and not null
+    if (flvPlayer) {
+        console.log(screenModel.name)
+        let flvPlayer1 = flvjs.createPlayer({
+            type: 'flv',
+            url: 'http://172.16.40.58:8080/live/test2.flv'
+        });
+
+        flvPlayer1.attachMediaElement(video);
+        flvPlayer1.load();
+        flvPlayer1.play();
+    } else {
+        // Otherwise, use the HTML5 video element
+        video.src = videoSrc;
+        video.play();
+    }
+}
+
+//3d video function block end=============================================================
+
