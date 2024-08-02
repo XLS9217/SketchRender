@@ -130,19 +130,20 @@ function loadAndApplyFilter( modelSrc ){
 			//NormalExpansion(gltf.scene, scene)
 
 			//add screen for ceibs
-			// if(modelSrc == modelLinks.CEIBS_1){
-			// 	scene.traverse((child) => {
-			// 		if(child.isMesh && child.name.includes('Screen')){
-			// 			child.scale.z *= -1.0
-			// 			if(child.name.includes('2')) loadVideoToScreen(child, vidSrc , false)
-			// 			else loadVideoToScreen(child, vidSrc , true)
-			// 		}
-			// 	})
+			if(modelSrc == modelLinks.CEIBS_1){
+				scene.traverse((child) => {
+					if(child.isMesh && child.name.includes('Screen')){
+						child.scale.z *= -1.0
+						if(child.name.includes('2')) loadVideoToScreen(child, vidSrc , false)
+						else loadVideoToScreen(child, vidSrc , true)
+					}
+				})
 				
-			// }
+			}
 		}
 	)
 }
+
 
 
 loadAndApplyFilter(modelLinks.TEST_1)
@@ -169,6 +170,7 @@ window.addEventListener('resize', () =>
 	camera.updateProjectionMatrix()
 
     renderer.setSize(sizes.width, sizes.height)
+	composer.setSize(sizes.width, sizes.height)
     renderer.setPixelRatio(sizes.pixelRatio)
 
 })

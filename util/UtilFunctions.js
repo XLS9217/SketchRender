@@ -105,15 +105,41 @@ export function flexableRender(composer, renderer) {
 
 
 //3d video function block str=============================================================
+function detectDevice() {
+    const ua = navigator.userAgent;
+
+    // Detect iPhone
+    const isIPhone = /iPhone/.test(ua);
+
+    // Detect iPad (both the old and new ways of identifying iPads)
+    const isIPad = /iPad/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    // Detect desktop (PC or Mac, excluding iPads)
+    const isDesktop = !isIPhone && !isIPad && /Win|Mac|Linux/.test(navigator.platform);
+
+    if (isIPhone) {
+        return 'iPhone';
+    } else if (isIPad) {
+        return 'iPad';
+    } else if (isDesktop) {
+        return 'Desktop';
+    } else {
+        return 'Unknown';
+    }
+}
 
 let videoMaterial
 export function loadVideoToScreen(screenModel, videoSrc, flvPlayer = false) {
+    let deviceType = detectDevice()
+
     // Create an HTML video element
     const video = document.createElement('video');
     video.loop = true;    // Set to loop the video
     video.muted = true;   // Mute the video
     video.playsInline = true; // Necessary for mobile devices
-    video.style.display = 'none'; // Hide the video element
+    if(! (deviceType == 'iPhone' || deviceType == 'iPad') ) video.style.display = 'none'; // Hide the video element
+    //video.style.zIndex = 999
+    video.crossOrigin = 'anonymous'
     document.body.appendChild(video);
 
     // Create a VideoTexture from the video element
