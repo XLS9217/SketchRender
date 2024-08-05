@@ -85,11 +85,11 @@ composer.addPass(renderPass);
 // const smaaPass = new SMAAPass(sizes.width, sizes.height)
 // composer.addPass(smaaPass)
 
-const geometryContourPass = new GeometryContourPass(renderer, scene, camera)
-composer.addPass(geometryContourPass)
+// const geometryContourPass = new GeometryContourPass(renderer, scene, camera)
+// composer.addPass(geometryContourPass)
 
-// const geometryLinePass = new GeometryLinePass(renderer, scene, camera)
-// composer.addPass(geometryLinePass)
+const geometryLinePass = new GeometryLinePass(renderer, scene, camera)
+composer.addPass(geometryLinePass)
 
 // const fxaaPass = new ShaderPass(FXAAShader)
 // composer.addPass(fxaaPass)
@@ -124,8 +124,8 @@ function loadAndApplyFilter( modelSrc ){
 			console.log(gltf)
 			scene.add(gltf.scene)
 	 
-			geometryContourPass.updateContourScene()
-			//geometryLinePass.updateLineScene()
+			// geometryContourPass.updateContourScene()
+			geometryLinePass.updateLineScene()
 			//ScaleExpansion(gltf.scene, scene)
 			//NormalExpansion(gltf.scene, scene)
 

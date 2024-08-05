@@ -118,17 +118,63 @@ export default class GeometryLinePass extends Pass {
             lineGeom = new CustomEdgesGeometry( mesh.geometry, 40 );
     
             
-            const line = new THREE.LineSegments( lineGeom, new THREE.LineBasicMaterial( { color: 0x000000 } ) );
+            const line = new THREE.LineSegments( lineGeom, this.getLineMaterial() );
             line.position.copy( mesh.position );
             line.scale.copy( mesh.scale );
             line.rotation.copy( mesh.rotation );
             
             lineScene.add(line)
 
-            mesh.material = new THREE.MeshBasicMaterial({ color: 0xffffff })
-            lineScene.add(mesh)
+            // mesh.material = new THREE.MeshBasicMaterial({ color: 0xffffff })
+            // lineScene.add(mesh)
         }
     
     }
+
+    getLineMaterial() {
+        let material = new THREE.LineBasicMaterial({ color: 0x000000 });
+    
+        material.onBeforeCompile = (shader) => {
+            console.log(shader.vertexShader);
+            console.log(shader.fragmentShader);
+    
+            // Inject code into the vertex shader to transform normal to view space
+            shader.vertexShader = `
+                varying vec3 vViewNormal;
+                ${shader.vertexShader}
+            `;
+    
+            shader.vertexShader = shader.vertexShader.replace(
+                '#include <begin_vertex>',
+                `#include <begin_vertex>
+                vViewNormal = (modelViewMatrix * vec4(normal, 0.0)).xyz;
+                `
+            );
+    
+            // Inject code into the fragment shader to use the transformed normal for coloring
+            shader.fragmentShader = `
+                varying vec3 vViewNormal;
+                ${shader.fragmentShader}
+            `;
+    
+            shader.fragmentShader = shader.fragmentShader.replace(
+                '#include <dithering_fragment>',
+                `#include <dithering_fragment>
+                // Calculate the color based on the view space normal
+                float dotProd = dot(normalize(vViewNormal), vec3(0.0, 0.0, 1.0));
+                if (dotProd > 0.0) {
+                    // Normal is facing the camera, set the color to green
+                    gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+                } else {
+                    // Normal is not facing the camera, set the color to red
+                    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+                }
+                `
+            );
+        };
+    
+        return material;
+    }
+    
 
 }
