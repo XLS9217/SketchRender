@@ -5,6 +5,8 @@ import { removeAllMesh } from '../util/UtilFunctions';
 import CustomEdgesGeometry from './CustomEdgesGeometry.js'
 
 const lineScene = new THREE.Scene()
+const backgroundColor = new THREE.Color(0.9, 0.9, 0.9)
+lineScene.background = backgroundColor
 
 export default class GeometryLinePass extends Pass {
     constructor(renderer, scene, camera) {
@@ -99,6 +101,7 @@ export default class GeometryLinePass extends Pass {
     }
 
     constructLineModel(scene){
+        lineScene.clear()
 
         const meshes = [];
         scene.traverse( child => {
@@ -125,22 +128,27 @@ export default class GeometryLinePass extends Pass {
             
             lineScene.add(line)
 
-            // mesh.material = new THREE.MeshBasicMaterial({ color: 0xffffff })
-            // lineScene.add(mesh)
+            mesh.material = this.getSurfaceMaterial()
+            lineScene.add(mesh)
         }
     
     }
 
     getLineMaterial() {
-        let material = new THREE.LineBasicMaterial({ color: 0x000000 });
+        let material = new THREE.LineBasicMaterial({ color: 0x000000, transparent: true});
     
         material.onBeforeCompile = (shader) => {
-            console.log(shader.vertexShader);
-            console.log(shader.fragmentShader);
+            // console.log(shader.vertexShader);
+            // console.log(shader.fragmentShader);
     
+            shader.uniforms.uSceneColor = new THREE.Uniform(backgroundColor)
+
             // Inject code into the vertex shader to transform normal to view space
             shader.vertexShader = `
+                attribute vec3 normal2;
+
                 varying vec3 vViewNormal;
+                varying vec3 vViewNormal2;
                 ${shader.vertexShader}
             `;
     
@@ -148,27 +156,36 @@ export default class GeometryLinePass extends Pass {
                 '#include <begin_vertex>',
                 `#include <begin_vertex>
                 vViewNormal = (modelViewMatrix * vec4(normal, 0.0)).xyz;
+                vViewNormal2 = (modelViewMatrix * vec4(normal2, 0.0)).xyz;
                 `
             );
     
             // Inject code into the fragment shader to use the transformed normal for coloring
             shader.fragmentShader = `
                 varying vec3 vViewNormal;
+                varying vec3 vViewNormal2;
+
+                uniform vec3 uSceneColor;
+
                 ${shader.fragmentShader}
             `;
     
             shader.fragmentShader = shader.fragmentShader.replace(
                 '#include <dithering_fragment>',
                 `#include <dithering_fragment>
+                
                 // Calculate the color based on the view space normal
                 float dotProd = dot(normalize(vViewNormal), vec3(0.0, 0.0, 1.0));
-                if (dotProd > 0.0) {
+                float dotProd2 = dot(normalize(vViewNormal2), vec3(0.0, 0.0, 1.0));
+
+                if (dotProd > 0.0 || dotProd2 > 0.0) {
                     // Normal is facing the camera, set the color to green
-                    gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+                    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
                 } else {
                     // Normal is not facing the camera, set the color to red
-                    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+                    gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
                 }
+                //gl_FragColor = vec4(vViewNormal2, 1.0);
                 `
             );
         };
@@ -176,5 +193,28 @@ export default class GeometryLinePass extends Pass {
         return material;
     }
     
-
+    getSurfaceMaterial(){
+        let material = new THREE.ShaderMaterial({
+            vertexShader: /* glsl */`
+                varying vec3 vNormalView;
+        
+                void main() {
+                    // Transform the normal to view space
+                    vNormalView = normalize((modelViewMatrix * vec4(normal, 0.0)).xyz);
+        
+                    // Offset the vertex position along the normal in view space
+                    vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
+                    vec3 offsetPosition = viewPosition.xyz + vNormalView * 0.1; // Adjust the offset distance as needed
+        
+                    gl_Position = projectionMatrix * vec4(offsetPosition, 1.0);
+                }
+            `,
+            fragmentShader: /* glsl */`
+                void main() {
+                    gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
+                }
+            `
+        });
+        return material;
+    }
 }
